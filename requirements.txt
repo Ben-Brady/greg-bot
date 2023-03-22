@@ -1,0 +1,3 @@
+python-dotenv
+openai
+discord.py-self
