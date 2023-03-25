@@ -78,9 +78,9 @@ class Client(discord.Client):
             return
         
         greg_messages = list(filter(self.is_message_from_greg, recent_messages))
-        greg_messages = list(filter(self.is_message_text, recent_messages))
-        greg_messages = list(filter(self.is_message_text, recent_messages))
-        
+        greg_messages = list(filter(self.is_message_text, greg_messages))
+        greg_messages = list(filter(self.already_responded_to, greg_messages))
+
         if len(greg_messages) == 0:
             print(f"\tGreg hasn't said anything in the last {len(recent_messages)} messages.")
             return
@@ -88,10 +88,10 @@ class Client(discord.Client):
 
         last_greg_message = greg_messages[0]
         self.replied_messages.update([msg.id for msg in greg_messages])
-        text = self.collate_messages(greg_messages)
+        greg_text = self.collate_messages(greg_messages)
         chat_log = self.generate_chat_log(recent_messages)
 
-        word_count = len(text.split(" "))
+        word_count = len(greg_text.split(" "))
         if word_count < 50:
             print(f"\tNot Reach Full Greg, only said {word_count} words.")
             return
