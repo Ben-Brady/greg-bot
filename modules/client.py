@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 from discord.ext import tasks
 import os
 
-GREG_ID = int(os.getenv("GREG_ID"))
+TARGET_ID = int(os.getenv("GREG_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+THRESHOLD = int(os.getenv("WORD_THRESHOLD"))
 
 class Client(discord.Client):
     counter = 0
@@ -18,7 +19,7 @@ class Client(discord.Client):
     
 
     def is_message_from_greg(self, message: discord.Message) -> bool:
-        if message.author.id == GREG_ID:
+        if message.author.id == TARGET_ID:
             return True
         else:
             return False
@@ -54,12 +55,12 @@ class Client(discord.Client):
         return chat_log
 
 
-    @tasks.loop(seconds=16)
+    @tasks.loop(seconds=32)
     async def greg_check(self):
         print("\n" + "-" * 50)
-        print("Checking For Greg!")
-        greg = await self.fetch_user(GREG_ID)
-        channel = await self.fetch_channel(CHANNEL_ID)  # type: ignore
+        user = await self.fetch_user(TARGET_ID)
+        channel = await self.fetch_channel(CHANNEL_ID)
+        print(f"Checking For {user.display_name.title()}!")
         if not isinstance(channel, TextChannel):
             print("  Could not find channel")
             return
@@ -77,22 +78,22 @@ class Client(discord.Client):
             print("\tLast message was from me :O")
             return
         
-        greg_messages = list(filter(self.is_message_from_greg, recent_messages))
-        greg_messages = list(filter(self.is_message_text, greg_messages))
-        greg_messages = list(filter(self.already_responded_to, greg_messages))
+        target_messages = list(filter(self.is_message_from_greg, recent_messages))
+        target_messages = list(filter(self.is_message_text, target_messages))
+        target_messages = list(filter(self.already_responded_to, target_messages))
 
-        if len(greg_messages) == 0:
-            print(f"\tGreg hasn't said anything in the last {len(recent_messages)} messages.")
+        if len(target_messages) == 0:
+            print(f"\t{user.display_name.title()} hasn't said anything in the last {len(recent_messages)} messages.")
             return
 
 
-        last_greg_message = greg_messages[0]
-        self.replied_messages.update([msg.id for msg in greg_messages])
-        greg_text = self.collate_messages(greg_messages)
+        last_greg_message = target_messages[0]
+        self.replied_messages.update([msg.id for msg in target_messages])
+        greg_text = self.collate_messages(target_messages)
         chat_log = self.generate_chat_log(recent_messages)
 
         word_count = len(greg_text.split(" "))
-        if word_count < 50:
+        if word_count < THRESHOLD:
             print(f"\tNot Reach Full Greg, only said {word_count} words.")
             return
         
@@ -103,7 +104,7 @@ class Client(discord.Client):
         print("\tGenerating Response!")
         async with channel.typing():
             response_word_count = len(last_greg_message.content) // 2
-            response = generate_argument_response(messages=chat_log, target=greg.display_name, word_count=response_word_count)
+            response = generate_argument_response(messages=chat_log, target=user.display_name, word_count=response_word_count)
         
         print("Generating response from chat:")
         for msg in chat_log:
