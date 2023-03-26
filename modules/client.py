@@ -60,21 +60,21 @@ class Client(discord.Client):
         print("\n" + "-" * 50)
         user = await self.fetch_user(TARGET_ID)
         channel = await self.fetch_channel(CHANNEL_ID)
-        print(f"Checking For {user} in {channel.name}!")
+        print(f"Checking For {user} in {channel}!")
         if not isinstance(channel, TextChannel):
             print("  Could not find channel")
             return
 
         recent_timestamp = datetime.now() - timedelta(hours=6)
-        search = channel.history(limit=10, after=recent_timestamp)
+        search = channel.history(limit=10, after=recent_timestamp, oldest_first=False)
         recent_messages: list[discord.Message] = [msg async for msg in search]
-        recent_messages.sort(key=lambda msg: msg.created_at, reverse=True)
+        recent_messages.sort(key=lambda msg: msg.created_at, reverse=False)
         
         if len(recent_messages) == 0:
             print("\tNo Recent Messages")
             return
         
-        if self.is_message_from_me(recent_messages[0]):
+        if self.is_message_from_me(recent_messages[-1]):
             print("\tLast message was from me :O")
             return
         
@@ -87,7 +87,7 @@ class Client(discord.Client):
             return
 
 
-        last_greg_message = target_messages[0]
+        last_greg_message = target_messages[-1]
         self.replied_messages.update([msg.id for msg in target_messages])
         greg_text = self.collate_messages(target_messages)
         chat_log = self.generate_chat_log(recent_messages)
@@ -106,13 +106,13 @@ class Client(discord.Client):
             response_word_count = len(last_greg_message.content) // 2
             response = generate_argument_response(messages=chat_log, target=user.display_name, word_count=response_word_count)
         
-        print("Generating response from chat:")
-        for msg in chat_log:
-            print("\t" + msg.replace("\n", "\n\t"))
-        print(f"\tAttemtped Word Count: {response_word_count}")
-        print(f"\tActual Word Count: {len(response.split(' '))}")
-        print(f"\tResponse: {response}")
-        await last_greg_message.reply(response)
+            print("Generating response from chat:")
+            for msg in chat_log:
+                print("\t" + msg.replace("\n", "\n\t"))
+            print(f"\tAttemtped Word Count: {response_word_count}")
+            print(f"\tActual Word Count: {len(response.split(' '))}")
+            print(f"\tResponse: {response}")
+            await last_greg_message.reply(response)
 
 
     @greg_check.before_loop
