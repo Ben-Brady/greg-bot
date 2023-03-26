@@ -37,7 +37,7 @@ class Client(discord.Client):
         return message.author.id == self.user.id
     
     def already_responded_to(self, message: discord.Message) -> bool:
-        return message.id in self.replied_messages
+        return message.id not in self.replied_messages
 
     
     def collate_messages(self, messages: list[discord.Message]) -> str:
@@ -60,7 +60,7 @@ class Client(discord.Client):
         print("\n" + "-" * 50)
         user = await self.fetch_user(TARGET_ID)
         channel = await self.fetch_channel(CHANNEL_ID)
-        print(f"Checking For {user.display_name.title()}!")
+        print(f"Checking For {user} in {channel.name}!")
         if not isinstance(channel, TextChannel):
             print("  Could not find channel")
             return
@@ -94,7 +94,7 @@ class Client(discord.Client):
 
         word_count = len(greg_text.split(" "))
         if word_count < THRESHOLD:
-            print(f"\tNot Reach Full Greg, only said {word_count} words.")
+            print(f"\tNot Reach Full Greg, he's only said {word_count} words.")
             return
         
         if not is_argument(chat_log):
